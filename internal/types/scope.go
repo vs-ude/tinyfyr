@@ -528,7 +528,6 @@ func (s *Scope) lookupNamedScope(n *parser.NamedTypeNode, log *errlog.ErrorLog) 
 func (s *Scope) LookupOrCreateGroupSpecifier(name string, loc errlog.LocationRange, kind GroupSpecifierKind, log *errlog.ErrorLog) (*GroupSpecifier, error) {
 	g := s.lookupGroupSpecifier(name)
 	if g == nil {
-		println("CREATE spec", name, kind)
 		g = NewGroupSpecifier(name, kind, loc)
 		// Register the group in the function scope (if inside a function)
 		for s != nil {
