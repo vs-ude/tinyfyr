@@ -1,5 +1,5 @@
-/fyrc
-/fyrarch
+/tfc
+/tfarch
 /.vscode/*
 !/.vscode/launch.json
 !/.vscode/tasks.json
