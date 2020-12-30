@@ -25,8 +25,17 @@ func mut *S.method(a mut *S) where (this < a) {
 
 }
 
+/*
+Types F and F2 cannot be assigned to each other
+*/
+
 type F func(mut a *S, mut b *S) where (a = b)
+type F2 func(mut a *S, mut b *S) where (a = b)
+
+func funcptr(mut a *S, mut b *S) where (a = b) {
+
+}
 
 func Main() {
-	var f F = null
+	var f F = funcptr
 }

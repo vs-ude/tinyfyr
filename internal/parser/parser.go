@@ -347,6 +347,7 @@ func (p *Parser) parseImportBlock() (Node, error) {
 	return n, nil
 }
 
+// Parses tokens of the form `type Name someType`.
 func (p *Parser) parseTypedef() (*TypedefNode, error) {
 	n := &TypedefNode{}
 	var err error
@@ -357,6 +358,7 @@ func (p *Parser) parseTypedef() (*TypedefNode, error) {
 		return nil, err
 	}
 	if p.peek(lexer.TokenLess) {
+		// Generic Type
 		if n.GenericParams, err = p.parseGenericParamList(); err != nil {
 			return nil, err
 		}
@@ -407,13 +409,16 @@ func (p *Parser) parseFunc(n *FuncNode) error {
 	var ok bool
 	if n.TildeToken == nil {
 		if n.DotToken, ok = p.optional(lexer.TokenDot); ok {
+			// A member function. Now parse the function name
 			if n.NameToken, err = p.expect(lexer.TokenIdentifier); err != nil {
 				return err
 			}
 		} else if name, ok := n.Type.(*NamedTypeNode); ok && name.Namespace == nil {
+			// Not a member function. The parsed type is not a type. It is the function name.
 			n.NameToken = name.NameToken
 			n.Type = nil
 			if p.peek(lexer.TokenLess) {
+				// A generic function?
 				if n.GenericParams, err = p.parseGenericParamList(); err != nil {
 					return err
 				}
@@ -833,12 +838,15 @@ func (p *Parser) parseFuncType(funcToken *lexer.Token) (*FuncTypeNode, error) {
 	if n.Params, err = p.parseParameterList(); err != nil {
 		return nil, err
 	}
+	// Is there a return type?
 	if !p.peek(lexer.TokenNewline) && !p.peek(lexer.TokenColon) && !p.peek(lexer.TokenCloseParanthesis) && !p.peek(lexer.TokenAssign) {
+		// List of return types
 		if p.peek(lexer.TokenOpenParanthesis) {
 			if n.ReturnParams, err = p.parseParameterList(); err != nil {
 				return nil, err
 			}
 		} else {
+			// Just one return type
 			pn := &ParamNode{}
 			if err = p.parseParameter(pn); err != nil {
 				return nil, err

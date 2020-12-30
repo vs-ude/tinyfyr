@@ -164,10 +164,10 @@ type FuncType struct {
 	TypeBase
 	In  *ParameterList
 	Out *ParameterList
-	// Optional
+	// Optional. Used for member functions
 	Target       Type
 	IsDestructor bool
-	// Computed value
+	// Computed value, as the same information is in the `Out` field.
 	returnType Type
 }
 
