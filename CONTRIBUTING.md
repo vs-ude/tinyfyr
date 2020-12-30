@@ -12,7 +12,7 @@ It is hosted on our [website](http://fyr.vs.uni-due.de) and updated hourly.
 
 ### Internal API
 
-The internal API documentation is automatically built and hosted on [GoDoc](https://godoc.org/github.com/vs-ude/fyrlang).
+The internal API documentation is automatically built and hosted on [GoDoc](https://godoc.org/github.com/vs-ude/tinyfyr).
 It updates periodically.
 If it is out of date, you can use the link at the bottom of the page to refresh it.
 
@@ -37,8 +37,8 @@ Makefile         | The build and test process definitions used by make.
 ## Building
 
 We use _make_ to manage the build process.
-To build the compiler binary, simply type `make fyrc`, executing `make` will build all commands defined in the _cmd/_ folder.
-This file also defines actions for testing (`make test`, `make test_go`, `make test_fyr`) and removing generated files (`make clean`) in the project.
+To build the compiler binary, simply type `make tfc`, executing `make` will build all commands defined in the _cmd/_ folder.
+This file also defines actions for testing (`make test`, `make test_go`, `make test_tf`) and removing generated files (`make clean`) in the project.
 
 More commands may be available.
 Please refer to the [Makefile](./Makefile) in the source folder for these.
