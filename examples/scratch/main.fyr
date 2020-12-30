@@ -1,0 +1,32 @@
+
+type S struct {
+	iface
+	x int
+	y int
+}
+
+type iface interface {
+	func f1(a mut *S) (x mut *S, y mut *S) where (this = a < x = y)
+}
+
+func demo(a mut *S, b mut *S, c mut *S, d mut *S, e mut *S) *S where (a < b, e < d < c < return) {
+
+}
+
+func demo2(a mut *S) (x mut *S, y mut *S) where (a < x = y) {
+
+}
+
+func mut *S.f1(a mut *S) (x mut *S, y mut *S) where (this = a < x = y) {
+
+}
+
+func mut *S.method(a mut *S) where (this < a) {
+
+}
+
+type F func(mut a *S, mut b *S) where (a = b)
+
+func Main() {
+	var f F = null
+}

@@ -15,23 +15,15 @@ Setting this project up for development is simple.
 Since it does not have any external dependencies you only need to clone this repository and link it into your `$GOPATH`.
 _Notice:_ This project requires Go 1.13 or later to work.
 
-To make imports and compilation work, the link needs to look like this:
-```
-$GOPATH/src/github.com/vs-ude/fyrlang -> /path/to/source
-```
-
 To build the compiler run
 ```
 make
 ```
 
-Now set the `$FYRBASE` environment variable and add the compiler to your path as follows
+Now set the `$TFBASE` environment variable and add the compiler to your path as follows
 ```
-export FYRBASE=$GOPATH/src/github.com/vs-ude/fyrlang
-export PATH=$PATH:$FYRBASE
+export TFBASE=$GOPATH/src/github.com/vs-ude/tinyfyr
+export PATH=$PATH:$TFBASE
 ```
 
 For more information on how to contribute please refer to the [contribution guidelines](./CONTRIBUTING.md)
-
-[![Build Status](https://travis-ci.org/vs-ude/fyrlang.svg?branch=dev)](https://travis-ci.org/vs-ude/fyrlang)
-[![Go Report Card](https://goreportcard.com/badge/github.com/vs-ude/fyrlang)](https://goreportcard.com/report/github.com/vs-ude/fyrlang)
