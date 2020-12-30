@@ -1,9 +1,9 @@
 package types
 
 import (
-	"github.com/vs-ude/fyrlang/internal/errlog"
-	"github.com/vs-ude/fyrlang/internal/lexer"
-	"github.com/vs-ude/fyrlang/internal/parser"
+	"github.com/vs-ude/tinyfyr/internal/errlog"
+	"github.com/vs-ude/tinyfyr/internal/lexer"
+	"github.com/vs-ude/tinyfyr/internal/parser"
 )
 
 func parseType(ast parser.Node, s *Scope, log *errlog.ErrorLog) (Type, error) {

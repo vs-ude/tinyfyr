@@ -1,0 +1,12 @@
+package backend
+
+/*
+	"github.com/vs-ude/fyrlang/internal/irgen"
+*/
+
+// Backend is the interface backends have to follow in order to be usable in the compiler.
+type Backend interface {
+	/*
+		Run([]*irgen.Package) (string, error)
+	*/
+}

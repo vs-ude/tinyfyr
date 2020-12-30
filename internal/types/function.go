@@ -1,9 +1,9 @@
 package types
 
 import (
-	"github.com/vs-ude/fyrlang/internal/config"
-	"github.com/vs-ude/fyrlang/internal/errlog"
-	"github.com/vs-ude/fyrlang/internal/parser"
+	"github.com/vs-ude/tinyfyr/internal/config"
+	"github.com/vs-ude/tinyfyr/internal/errlog"
+	"github.com/vs-ude/tinyfyr/internal/parser"
 )
 
 // Find all functions attached to a type by traversing the type graph.

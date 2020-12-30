@@ -1,4 +1,4 @@
-module github.com/vs-ude/fyrlang
+module github.com/vs-ude/tinyfyr
 
 go 1.13
 

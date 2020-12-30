@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"unicode"
 
-	"github.com/vs-ude/fyrlang/internal/errlog"
-	"github.com/vs-ude/fyrlang/internal/parser"
+	"github.com/vs-ude/tinyfyr/internal/errlog"
+	"github.com/vs-ude/tinyfyr/internal/parser"
 )
 
 type file struct {

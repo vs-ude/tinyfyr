@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/vs-ude/fyrlang/internal/errlog"
+	"github.com/vs-ude/tinyfyr/internal/errlog"
 )
 
 func printErrors(log *errlog.ErrorLog, lmap *errlog.LocationMap) {

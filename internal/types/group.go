@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/vs-ude/fyrlang/internal/errlog"
+	"github.com/vs-ude/tinyfyr/internal/errlog"
 )
 
 // GroupSpecifierKind ...

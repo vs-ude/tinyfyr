@@ -1,6 +1,6 @@
 package lexer
 
-import "github.com/vs-ude/fyrlang/internal/errlog"
+import "github.com/vs-ude/tinyfyr/internal/errlog"
 
 // Lexer ...
 type Lexer struct {

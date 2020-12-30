@@ -10,8 +10,8 @@ package parser
  **************************************/
 
 import (
-	"github.com/vs-ude/fyrlang/internal/errlog"
-	"github.com/vs-ude/fyrlang/internal/lexer"
+	"github.com/vs-ude/tinyfyr/internal/errlog"
+	"github.com/vs-ude/tinyfyr/internal/lexer"
 )
 
 // Node is implemented by all nodes of the AST.

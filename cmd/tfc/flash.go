@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/vs-ude/fyrlang/internal/config"
-	"github.com/vs-ude/fyrlang/internal/types"
+	"github.com/vs-ude/tinyfyr/internal/config"
+	"github.com/vs-ude/tinyfyr/internal/types"
 )
 
 func flash(pkg *types.Package) error {

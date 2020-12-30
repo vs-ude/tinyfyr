@@ -3,8 +3,8 @@ package types
 import (
 	"path/filepath"
 
-	"github.com/vs-ude/fyrlang/internal/config"
-	"github.com/vs-ude/fyrlang/internal/errlog"
+	"github.com/vs-ude/tinyfyr/internal/config"
+	"github.com/vs-ude/tinyfyr/internal/errlog"
 )
 
 // PackageGenerator is used to generate packages and log events to the provided location.

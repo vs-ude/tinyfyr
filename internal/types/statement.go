@@ -3,8 +3,8 @@ package types
 import (
 	"fmt"
 
-	"github.com/vs-ude/fyrlang/internal/errlog"
-	"github.com/vs-ude/fyrlang/internal/parser"
+	"github.com/vs-ude/tinyfyr/internal/errlog"
+	"github.com/vs-ude/tinyfyr/internal/parser"
 )
 
 func checkStatement(ast parser.Node, s *Scope, log *errlog.ErrorLog) error {

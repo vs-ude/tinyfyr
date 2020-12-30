@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/vs-ude/fyrlang/internal/config"
+	"github.com/vs-ude/tinyfyr/internal/config"
 )
 
 const (
@@ -15,7 +15,7 @@ const (
 )
 
 var help = `
-Usage: fyrc <flags> <command> <path>
+Usage: tfc <flags> <command> <path>
 
 Commands:
   help             Prints this help message.

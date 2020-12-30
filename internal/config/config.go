@@ -38,7 +38,7 @@ func init() {
 		_, b, _, _ := runtime.Caller(0)
 		srcpath := filepath.Dir(b)
 		basepath := filepath.Dir(filepath.Dir(srcpath))
-		_, err := os.Stat(filepath.Join(basepath, "fyrc"))
+		_, err := os.Stat(filepath.Join(basepath, "tfc"))
 		if err == nil {
 			os.Setenv("TFBASE", basepath)
 			config.FyrBase = basepath
