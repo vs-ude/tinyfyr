@@ -1,0 +1,29 @@
+{
+    "arch": "atmega328",
+    "c99": {
+        "compiler": {
+            "command": "avr-gcc",
+            "flags": ["-Os", "-ffunction-sections", "-fdata-sections", "-mmcu=atmega328p", "-DF_CPU=16000000"]
+        },
+        "archiver": {
+            "command": "avr-ar",
+            "flags": ["rcs"]
+        },
+        "linker": {
+            "command": "avr-gcc",
+            "flags": ["-mmcu=atmega328p", "-ffunction-sections", "-fdata-sections", "-Wl,--gc-sections"]
+        },
+        "flash": {
+            "commands": [
+                {
+                    "command": "avr-objcopy",
+                    "flags": ["-O", "ihex", "-R", ".eeprom", "{{BIN}}/{{NAME}}", "{{BIN}}/{{NAME}}.hex"]
+                },
+                {
+                    "command": "avrdude",
+                    "flags": ["-c", "arduino", "-p", "atmega328p", "-P", "{{FLASH}}", "-b", "19600", "-U", "flash:w:{{BIN}}/{{NAME}}.hex:i"]
+                }
+            ]
+        }
+    }
+}

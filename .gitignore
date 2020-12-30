@@ -1,0 +1,10 @@
+/fyrc
+/fyrarch
+/.vscode/*
+!/.vscode/launch.json
+!/.vscode/tasks.json
+/examples/**/pkg/
+/examples/**/bin/
+/lib/**/pkg/
+/lib/**/bin/
+__*
