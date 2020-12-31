@@ -24,22 +24,20 @@ type ExprType struct {
 	// This is required, because the type system distinguishes between the mutability of a pointer
 	// and the mutability of the value it is pointing to.
 	PointerDestMutable bool
-	// The group specifier that applies to the expression value (or null if none was specified).
-	// GroupSpecifier *GroupSpecifier
-	// The group specifier that applies to the  values being pointed to (or null if none was specified).
+	// PointerDestStackOrder applies to the values being pointed to (or null if none was specified).
 	// This is required, because a pointer on the stack belongs to a stack-group,
-	// but it might point to an object of another group.
-	PointerDestGroupSpecifier *GroupSpecifier
-	StringValue               string
-	RuneValue                 rune
-	IntegerValue              *big.Int
-	FloatValue                *big.Float
-	BoolValue                 bool
-	ArrayValue                []*ExprType
-	StructValue               map[string]*ExprType
-	FuncValue                 *Func
-	NamespaceValue            *Namespace
-	TypeConversionValue       TypeConversion
+	// but it might point to an object of another stack frame.
+	PointerDestStackOrder *StackOrder
+	StringValue           string
+	RuneValue             rune
+	IntegerValue          *big.Int
+	FloatValue            *big.Float
+	BoolValue             bool
+	ArrayValue            []*ExprType
+	StructValue           map[string]*ExprType
+	FuncValue             *Func
+	NamespaceValue        *Namespace
+	TypeConversionValue   TypeConversion
 	// HasValue is true if one of the *Value properties holds a value.
 	// This does not imply that the expression has a constant value, because
 	// an ArrayValue may contain an ExprType that has no value.
@@ -97,7 +95,7 @@ func (et *ExprType) Clone() *ExprType {
 	result.Unsafe = et.Unsafe
 	result.PointerDestMutable = et.PointerDestMutable
 	result.Volatile = et.Volatile
-	result.PointerDestGroupSpecifier = et.PointerDestGroupSpecifier
+	result.PointerDestStackOrder = et.PointerDestStackOrder
 	result.StringValue = et.StringValue
 	result.RuneValue = et.RuneValue
 	result.IntegerValue = et.IntegerValue
@@ -170,8 +168,8 @@ func (et *ExprType) ToType() Type {
 	if et.PointerDestMutable || et.Volatile {
 		t = &MutableType{TypeBase: TypeBase{location: t.Location(), pkg: t.Package()}, Type: t, Mutable: et.PointerDestMutable, Volatile: et.Volatile}
 	}
-	if et.PointerDestGroupSpecifier != nil {
-		t = &GroupedType{TypeBase: TypeBase{location: t.Location(), pkg: t.Package()}, GroupSpecifier: et.PointerDestGroupSpecifier, Type: t}
+	if et.PointerDestStackOrder != nil {
+		t = &StackOrderedType{TypeBase: TypeBase{location: t.Location(), pkg: t.Package()}, StackOrder: et.PointerDestStackOrder, Type: t}
 	}
 	return t
 }
@@ -196,8 +194,8 @@ func makeExprType(t Type) *ExprType {
 			e.Volatile = t2.Volatile
 			t = t2.Type
 			continue
-		case *GroupedType:
-			e.PointerDestGroupSpecifier = t2.GroupSpecifier
+		case *StackOrderedType:
+			e.PointerDestStackOrder = t2.StackOrder
 			t = t2.Type
 			continue
 		}
@@ -220,8 +218,8 @@ func DeriveExprType(et *ExprType, t Type) *ExprType {
 			e.Volatile = t2.Volatile
 			t = t2.Type
 			continue
-		case *GroupedType:
-			e.PointerDestGroupSpecifier = t2.GroupSpecifier
+		case *StackOrderedType:
+			e.PointerDestStackOrder = t2.StackOrder
 			t = t2.Type
 			continue
 		}
@@ -248,8 +246,8 @@ func DerivePointerExprType(et *ExprType, t Type) *ExprType {
 			e.Volatile = t2.Volatile
 			t = t2.Type
 			continue
-		case *GroupedType:
-			e.PointerDestGroupSpecifier = t2.GroupSpecifier
+		case *StackOrderedType:
+			e.PointerDestStackOrder = t2.StackOrder
 			t = t2.Type
 			continue
 		}
@@ -282,7 +280,7 @@ func deriveSliceOfExprType(et *ExprType, elementType Type, loc errlog.LocationRa
 func copyExprType(dest *ExprType, src *ExprType) {
 	dest.Type = src.Type
 	dest.Mutable = src.Mutable
-	dest.PointerDestGroupSpecifier = src.PointerDestGroupSpecifier
+	dest.PointerDestStackOrder = src.PointerDestStackOrder
 	dest.Volatile = src.Volatile
 	dest.Unsafe = src.Unsafe
 	dest.PointerDestMutable = src.PointerDestMutable
@@ -294,7 +292,7 @@ func CloneExprType(src *ExprType) *ExprType {
 	dest := &ExprType{}
 	dest.Type = src.Type
 	dest.Mutable = src.Mutable
-	dest.PointerDestGroupSpecifier = src.PointerDestGroupSpecifier
+	dest.PointerDestStackOrder = src.PointerDestStackOrder
 	dest.PointerDestMutable = src.PointerDestMutable
 	dest.Volatile = src.Volatile
 	dest.Unsafe = src.Unsafe
@@ -459,9 +457,6 @@ func inferType(et *ExprType, target *ExprType, nested bool, loc errlog.LocationR
 	} else if et.Type == arrayLiteralType {
 		if s, ok := GetSliceType(tt); ok {
 			tet := DerivePointerExprType(target, s.ElementType)
-			if nested && len(et.ArrayValue) != 0 && tet.PointerDestGroupSpecifier != nil {
-				return log.AddError(errlog.ErrorCannotInferTypeWithGroups, loc)
-			}
 			for _, vet := range et.ArrayValue {
 				if needsTypeInference(vet) {
 					// TODO: loc is not the optimal location
@@ -475,17 +470,14 @@ func inferType(et *ExprType, target *ExprType, nested bool, loc errlog.LocationR
 				}
 			}
 			copyExprType(et, target)
-			// Do not use group specifiers on temporary values.
-			et.PointerDestGroupSpecifier = nil
+			// Do not use stack order on temporary values.
+			et.PointerDestStackOrder = nil
 			return nil
 		} else if a, ok := GetArrayType(tt); ok {
 			tet := DeriveExprType(target, a.ElementType)
 			if len(et.ArrayValue) != 0 && uint64(len(et.ArrayValue)) != a.Size {
 				return log.AddError(errlog.ErrorIncompatibleTypes, loc)
 			}
-			if nested && len(et.ArrayValue) != 0 && tet.PointerDestGroupSpecifier != nil {
-				return log.AddError(errlog.ErrorCannotInferTypeWithGroups, loc)
-			}
 			for _, vet := range et.ArrayValue {
 				if needsTypeInference(vet) {
 					// TODO: loc is not the optimal location
@@ -499,8 +491,8 @@ func inferType(et *ExprType, target *ExprType, nested bool, loc errlog.LocationR
 				}
 			}
 			copyExprType(et, target)
-			// Do not use group specifiers on temporary values.
-			et.PointerDestGroupSpecifier = nil
+			// Do not use stack order on temporary values.
+			et.PointerDestStackOrder = nil
 			return nil
 		}
 	} else if et.Type == structLiteralType {
@@ -521,9 +513,6 @@ func inferType(et *ExprType, target *ExprType, nested bool, loc errlog.LocationR
 						} else {
 							tet = DeriveExprType(target, f.Type)
 						}
-						if nested && tet.PointerDestGroupSpecifier != nil {
-							return log.AddError(errlog.ErrorCannotInferTypeWithGroups, loc)
-						}
 						found = true
 						if needsTypeInference(vet) {
 							// TODO: loc is not the optimal location
@@ -543,8 +532,8 @@ func inferType(et *ExprType, target *ExprType, nested bool, loc errlog.LocationR
 				}
 			}
 			copyExprType(et, target)
-			// Do not use group specifiers on temporary values.
-			et.PointerDestGroupSpecifier = nil
+			// Do not use stack order on temporary values.
+			et.PointerDestStackOrder = nil
 			return nil
 		}
 		if s, ok := GetUnionType(targetType); ok {
@@ -561,9 +550,6 @@ func inferType(et *ExprType, target *ExprType, nested bool, loc errlog.LocationR
 						} else {
 							tet = DeriveExprType(target, f.Type)
 						}
-						if nested && tet.PointerDestGroupSpecifier != nil {
-							return log.AddError(errlog.ErrorCannotInferTypeWithGroups, loc)
-						}
 						found = true
 						if needsTypeInference(vet) {
 							// TODO: loc is not the optimal location
@@ -583,8 +569,8 @@ func inferType(et *ExprType, target *ExprType, nested bool, loc errlog.LocationR
 				}
 			}
 			copyExprType(et, target)
-			// Do not use group specifiers on temporary values.
-			et.PointerDestGroupSpecifier = nil
+			// Do not use stack order on temporary values.
+			et.PointerDestStackOrder = nil
 			return nil
 		}
 	}

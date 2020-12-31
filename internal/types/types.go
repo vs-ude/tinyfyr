@@ -191,12 +191,11 @@ type MutableType struct {
 	Type     Type
 }
 
-// GroupedType ...
-type GroupedType struct {
+// StackOrderedType ...
+type StackOrderedType struct {
 	TypeBase
-	// The group specifier used by this type.
-	GroupSpecifier *GroupSpecifier
-	Type           Type
+	StackOrder *StackOrder
+	Type       Type
 }
 
 // GenericType ...
@@ -487,7 +486,7 @@ func (t *ArrayType) ToString() string {
 }
 
 // Check ...
-func (t *GroupedType) Check(log *errlog.ErrorLog) error {
+func (t *StackOrderedType) Check(log *errlog.ErrorLog) error {
 	if t.typeChecked {
 		return nil
 	}
@@ -496,8 +495,8 @@ func (t *GroupedType) Check(log *errlog.ErrorLog) error {
 }
 
 // ToString ...
-func (t *GroupedType) ToString() string {
-	return t.GroupSpecifier.ToString() + " " + t.Type.ToString()
+func (t *StackOrderedType) ToString() string {
+	return t.Type.ToString()
 }
 
 // Check ...
@@ -602,7 +601,7 @@ func (t *StructType) Check(log *errlog.ErrorLog) error {
 		f.InnerScope = newScope(f.OuterScope, FunctionScope, f.Location)
 		f.InnerScope.Func = f
 		vthis := &Variable{name: "this", Type: makeExprType(ft.Target)}
-		ft.Target = &GroupedType{GroupSpecifier: &GroupSpecifier{Name: "this", Kind: GroupSpecifierNamed}, Type: ft.Target, TypeBase: TypeBase{location: ft.location, component: ft.Component(), pkg: ft.Package()}}
+		// ft.Target = &GroupedType{GroupSpecifier: &GroupSpecifier{Name: "this", Kind: GroupSpecifierNamed}, Type: ft.Target, TypeBase: TypeBase{location: ft.location, component: ft.Component(), pkg: ft.Package()}}
 		f.InnerScope.AddElement(vthis, t.location, log)
 		t.Funcs = append(t.Funcs, f)
 		pkg := t.Package()
@@ -953,32 +952,12 @@ func (t *GenericInstanceType) ToString() string {
  *************************************************/
 
 func isEqualType(left Type, right Type, mode EqualTypeMode) bool {
-	// Check group specifiers (or ignore them)
-	if mode == Comparable {
-		// Groups do not matter for comparison
-		if l, ok := left.(*GroupedType); ok {
-			left = l.Type
-		}
-		if r, ok := right.(*GroupedType); ok {
-			right = r.Type
-		}
-	} else {
-		// Groups do not matter for comparison
-		l, lok := left.(*GroupedType)
-		r, rok := right.(*GroupedType)
-		if lok != rok {
-			return false
-		}
-		if lok {
-			if l.GroupSpecifier.Kind != r.GroupSpecifier.Kind {
-				return false
-			}
-			if l.GroupSpecifier.Kind == GroupSpecifierNamed && l.GroupSpecifier.Name != r.GroupSpecifier.Name {
-				return false
-			}
-			left = l.Type
-			right = r.Type
-		}
+	// Ignore stack order
+	if l, ok := left.(*StackOrderedType); ok {
+		left = l.Type
+	}
+	if r, ok := right.(*StackOrderedType); ok {
+		right = r.Type
 	}
 
 	// Check mutability
@@ -1109,7 +1088,7 @@ func IsSliceType(t Type) bool {
 		return true
 	case *MutableType:
 		return IsSliceType(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return IsSliceType(t2.Type)
 	}
 	return false
@@ -1122,7 +1101,7 @@ func IsPointerType(t Type) bool {
 		return true
 	case *MutableType:
 		return IsPointerType(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return IsPointerType(t2.Type)
 	}
 	return false
@@ -1138,7 +1117,7 @@ func IsArrayType(t Type) bool {
 		return true
 	case *MutableType:
 		return IsArrayType(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return IsArrayType(t2.Type)
 	}
 	return false
@@ -1183,7 +1162,7 @@ func IsUnsafePointerType(t Type) bool {
 		return IsUnsafePointerType(t2.Alias)
 	case *MutableType:
 		return IsUnsafePointerType(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return IsUnsafePointerType(t2.Type)
 	}
 	return false
@@ -1198,7 +1177,7 @@ func IsFuncType(t Type) bool {
 		return IsUnsafePointerType(t2.Alias)
 	case *MutableType:
 		return IsUnsafePointerType(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return IsUnsafePointerType(t2.Type)
 	}
 	return false
@@ -1213,7 +1192,7 @@ func GetArrayType(t Type) (*ArrayType, bool) {
 		return GetArrayType(t2.Alias)
 	case *MutableType:
 		return GetArrayType(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return GetArrayType(t2.Type)
 	case *GenericInstanceType:
 		return GetArrayType(t2.InstanceType)
@@ -1230,7 +1209,7 @@ func GetSliceType(t Type) (*SliceType, bool) {
 		return GetSliceType(t2.Alias)
 	case *MutableType:
 		return GetSliceType(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return GetSliceType(t2.Type)
 	case *GenericInstanceType:
 		return GetSliceType(t2.InstanceType)
@@ -1247,7 +1226,7 @@ func GetStructType(t Type) (*StructType, bool) {
 		return GetStructType(t2.Alias)
 	case *MutableType:
 		return GetStructType(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return GetStructType(t2.Type)
 	case *GenericInstanceType:
 		return GetStructType(t2.InstanceType)
@@ -1264,7 +1243,7 @@ func GetUnionType(t Type) (*UnionType, bool) {
 		return GetUnionType(t2.Alias)
 	case *MutableType:
 		return GetUnionType(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return GetUnionType(t2.Type)
 	case *GenericInstanceType:
 		return GetUnionType(t2.InstanceType)
@@ -1281,7 +1260,7 @@ func GetPointerType(t Type) (*PointerType, bool) {
 		return GetPointerType(t2.Alias)
 	case *MutableType:
 		return GetPointerType(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return GetPointerType(t2.Type)
 	case *GenericInstanceType:
 		return GetPointerType(t2.InstanceType)
@@ -1298,7 +1277,7 @@ func GetFuncType(t Type) (*FuncType, bool) {
 		return t2, true
 	case *MutableType:
 		return GetFuncType(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return GetFuncType(t2.Type)
 	case *GenericInstanceType:
 		return GetFuncType(t2.InstanceType)
@@ -1311,7 +1290,7 @@ func GetGenericInstanceType(t Type) (*GenericInstanceType, bool) {
 	switch t2 := t.(type) {
 	case *MutableType:
 		return GetGenericInstanceType(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return GetGenericInstanceType(t2.Type)
 	case *GenericInstanceType:
 		return t2, true
@@ -1326,21 +1305,21 @@ func GetAliasType(t Type) (*AliasType, bool) {
 		return t2, true
 	case *MutableType:
 		return GetAliasType(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return GetAliasType(t2.Type)
 	}
 	return nil, false
 }
 
-// TypeHasPointers returns true if the type contains pointers which point to its own group.
-// Unsafe pointers and structs/unions containing pointers to other groups are ignored
+// TypeHasPointers returns true if the type contains pointers.
+// Unsafe pointers are ignored.
 func TypeHasPointers(t Type) bool {
 	switch t2 := t.(type) {
 	case *AliasType:
 		return TypeHasPointers(t2.Alias)
 	case *MutableType:
 		return TypeHasPointers(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return TypeHasPointers(t2.Type)
 	case *ArrayType:
 		return TypeHasPointers(t2.ElementType)
@@ -1354,19 +1333,13 @@ func TypeHasPointers(t Type) bool {
 	case *StructType:
 		for _, f := range t2.Fields {
 			if TypeHasPointers(f.Type) {
-				// Ignore pointers to other groups
-				if _, ok := f.Type.(*GroupedType); !ok {
-					return true
-				}
+				return true
 			}
 		}
 	case *UnionType:
 		for _, f := range t2.Fields {
 			if TypeHasPointers(f.Type) {
-				// Ignore pointers to other groups
-				if _, ok := f.Type.(*GroupedType); !ok {
-					return true
-				}
+				return true
 			}
 		}
 	case *PrimitiveType:
@@ -1377,10 +1350,10 @@ func TypeHasPointers(t Type) bool {
 	return false
 }
 
-// RemoveGroup returns the same type, but without a toplevel GroupType component (if there is any).
-func RemoveGroup(t Type) Type {
+// RemoveStackOrder returns the same type, but without a toplevel StackOrderType component (if there is any).
+func RemoveStackOrder(t Type) Type {
 	switch t2 := t.(type) {
-	case *GroupedType:
+	case *StackOrderedType:
 		return t2.Type
 	}
 	return t
@@ -1393,7 +1366,7 @@ func StripType(t Type) Type {
 		return StripType(t2.Alias)
 	case *MutableType:
 		return StripType(t2.Type)
-	case *GroupedType:
+	case *StackOrderedType:
 		return StripType(t2.Type)
 	}
 	return t
@@ -1420,8 +1393,7 @@ func needsDestructor(t Type, isIsolatedGroup bool) bool {
 		return needsDestructor(t2.Alias, isIsolatedGroup)
 	case *MutableType:
 		return needsDestructor(t2.Type, isIsolatedGroup)
-	case *GroupedType:
-		isIsolatedGroup = isIsolatedGroup || (t2.GroupSpecifier != nil && t2.GroupSpecifier.Kind != GroupSpecifierNamed)
+	case *StackOrderedType:
 		return needsDestructor(t2.Type, isIsolatedGroup)
 	case *StructType:
 		if t2.Destructor() != nil {

@@ -55,8 +55,6 @@ func declareType(ast parser.Node) Type {
 		return &ClosureType{TypeBase: TypeBase{location: ast.Location()}}
 	} else if _, ok := ast.(*parser.FuncTypeNode); ok {
 		return &FuncType{TypeBase: TypeBase{location: ast.Location()}}
-	} else if _, ok := ast.(*parser.GroupedTypeNode); ok {
-		return &GroupedType{TypeBase: TypeBase{location: ast.Location()}}
 	} else if _, ok := ast.(*parser.MutableTypeNode); ok {
 		return &MutableType{TypeBase: TypeBase{location: ast.Location()}}
 	} else if _, ok := ast.(*parser.GenericInstanceTypeNode); ok {
@@ -84,8 +82,6 @@ func defineType(t Type, ast parser.Node, s *Scope, log *errlog.ErrorLog) error {
 		return defineClosureType(t.(*ClosureType), n, s, log)
 	} else if n, ok := ast.(*parser.FuncTypeNode); ok {
 		return defineFuncType(t.(*FuncType), n, s, log)
-	} else if n, ok := ast.(*parser.GroupedTypeNode); ok {
-		return defineGroupedType(t.(*GroupedType), n, s, log)
 	} else if n, ok := ast.(*parser.MutableTypeNode); ok {
 		return defineMutableType(t.(*MutableType), n, s, log)
 	} else if n, ok := ast.(*parser.GenericInstanceTypeNode); ok {
@@ -190,10 +186,10 @@ func defineClosureType(t *ClosureType, n *parser.ClosureTypeNode, s *Scope, log 
 	// This scope is used to fix the group specifiers only
 	innerScope := newScope(s, FunctionScope, n.Location())
 	for i, p := range f.In.Params {
-		fixParameterGroupSpecifier(f, p, i, innerScope, log)
+		fixParameterStackOrder(f, p, i, innerScope, log)
 	}
 	for i, p := range f.Out.Params {
-		fixReturnGroupSpecifier(f, p, i, innerScope, log)
+		fixReturnStackOrder(f, p, i, innerScope, log)
 	}
 	return nil
 }
@@ -213,13 +209,12 @@ func defineFuncType(t *FuncType, n *parser.FuncTypeNode, s *Scope, log *errlog.E
 	if err != nil {
 		return err
 	}
-	// This scope is used to fix the group specifiers only
 	innerScope := newScope(s, FunctionScope, n.Location())
 	for i, p := range t.In.Params {
-		fixParameterGroupSpecifier(t, p, i, innerScope, log)
+		fixParameterStackOrder(t, p, i, innerScope, log)
 	}
 	for i, p := range t.Out.Params {
-		fixReturnGroupSpecifier(t, p, i, innerScope, log)
+		fixReturnStackOrder(t, p, i, innerScope, log)
 	}
 	return nil
 }
@@ -377,38 +372,6 @@ func defineInterfaceType(t *InterfaceType, n *parser.InterfaceTypeNode, s *Scope
 	return nil
 }
 
-func defineGroupedType(t *GroupedType, n *parser.GroupedTypeNode, s *Scope, log *errlog.ErrorLog) error {
-	t.pkg = s.PackageScope().Package
-	componentScope := s.ComponentScope()
-	if componentScope != nil {
-		t.component = componentScope.Component
-	}
-	if n.GroupNameToken != nil {
-		t.GroupSpecifier = &GroupSpecifier{Kind: GroupSpecifierNamed, Name: n.GroupNameToken.StringValue, Location: n.Location()}
-	} else {
-		t.GroupSpecifier = &GroupSpecifier{Kind: GroupSpecifierNamed, Location: n.Location()}
-	}
-	if n.GroupSpecToken != nil {
-		if n.GroupSpecToken.Kind == lexer.TokenConst {
-			t.GroupSpecifier.Kind = GroupSpecifierConst
-		} else if n.GroupSpecToken.Kind == lexer.TokenNew {
-			t.GroupSpecifier.Kind = GroupSpecifierNew
-		} else if n.GroupSpecToken.Kind == lexer.TokenArrow {
-			t.GroupSpecifier.Kind = GroupSpecifierShared
-		} else {
-			panic("Oooops")
-		}
-	}
-	var err error
-	if t.Type, err = declareAndDefineType(n.Type, s, log); err != nil {
-		return err
-	}
-	if _, ok := t.Type.(*GroupedType); ok {
-		return log.AddError(errlog.ErrorWrongMutGroupOrder, n.Location())
-	}
-	return nil
-}
-
 func defineMutableType(t *MutableType, n *parser.MutableTypeNode, s *Scope, log *errlog.ErrorLog) error {
 	t.pkg = s.PackageScope().Package
 	componentScope := s.ComponentScope()
@@ -434,9 +397,6 @@ func defineMutableType(t *MutableType, n *parser.MutableTypeNode, s *Scope, log 
 		t.Mutable = t.Mutable || m.Mutable
 		t.Volatile = t.Volatile || m.Volatile
 		t.Type = m.Type
-	}
-	if _, ok := t.Type.(*GroupedType); ok {
-		return log.AddError(errlog.ErrorWrongMutGroupOrder, n.Location())
 	}
 	return nil
 }

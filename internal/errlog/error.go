@@ -17,8 +17,6 @@ const (
 	ErrorUnreachable ErrorCode = 1 + iota
 	// ErrorUninitializedVariable ...
 	ErrorUninitializedVariable
-	// ErrorNamedGroupMerge ...
-	ErrorNamedGroupMerge
 	// ErrorScopedGroupMerge ...
 	ErrorScopedGroupMerge
 	// ErrorIllegalRune ...
@@ -99,8 +97,6 @@ const (
 	ErrorVarWithoutType
 	// ErrorExpectedVariable ...
 	ErrorExpectedVariable
-	// ErrorWrongMutGroupOrder ...
-	ErrorWrongMutGroupOrder
 	// AssignmentValueCountMismatch ...
 	AssignmentValueCountMismatch
 	// ErrorNoNewVarsInAssignment ...
@@ -121,8 +117,6 @@ const (
 	ErrorDereferencingNullPointer
 	// ErrorLiteralDuplicateField ...
 	ErrorLiteralDuplicateField
-	// ErrorGroupsCannotBeMerged ...
-	ErrorGroupsCannotBeMerged
 	// ErrorUnknownLinkage ...
 	ErrorUnknownLinkage
 	// ErrorNotAFunction ...
@@ -133,10 +127,6 @@ const (
 	ErrorIllegalCast
 	// ErrorNewInitializerMismatch ...
 	ErrorNewInitializerMismatch
-	// ErrorCannotInferTypeWithGroups ...
-	ErrorCannotInferTypeWithGroups
-	// ErrorGroupUnavailable ...
-	ErrorGroupUnavailable
 	// ErrorUnknownMetaProperty ...
 	ErrorUnknownMetaProperty
 	// ErrorDualOutsideDualFunction ...
@@ -145,14 +135,10 @@ const (
 	ErrorTargetIsNotMutable
 	// ErrorIllegalEllipsis ...
 	ErrorIllegalEllipsis
-	// ErrorGroupingConstraints ...
-	ErrorGroupingConstraints
 	// ErrorSliceOfAnonymousArray ...
 	ErrorSliceOfAnonymousArray
 	// ErrorAddressOfAnonymousValue ...
 	ErrorAddressOfAnonymousValue
-	// ErrorGroupingOutOfScope ...
-	ErrorGroupingOutOfScope
 	// ErrorPointerInUnion ...
 	ErrorPointerInUnion
 	// ErrorExcessiveUnionValue ...
@@ -187,8 +173,6 @@ const (
 	ErrorWrongTypeForDelete
 	// ErrorWrongTypeForDestructor ...
 	ErrorWrongTypeForDestructor
-	// ErrorInconsistentGroupSpecifier ...
-	ErrorInconsistentGroupSpecifier
 )
 
 // Error ...
@@ -230,14 +214,6 @@ func (log *ErrorLog) AddErrorMulti(code ErrorCode, loc []LocationRange, args ...
 	return err
 }
 
-// AddGroupingError ...
-func (log *ErrorLog) AddGroupingError(group1 string, loc1 LocationRange, group2 string, locs ...LocationRange) *Error {
-	err := &Error{code: ErrorGroupingConstraints, args: []string{group1, group2}, location: loc1}
-	err.locations = append(err.locations, locs...)
-	log.Errors = append(log.Errors, err)
-	return err
-}
-
 // ToString ...
 func (log *ErrorLog) ToString(l *LocationMap) string {
 	str := ""
@@ -259,8 +235,6 @@ func (e *Error) ToString(l *LocationMap) string {
 		return "Detected unreachable code"
 	case ErrorUninitializedVariable:
 		return "Variable " + e.args[0] + " is not initialized"
-	case ErrorNamedGroupMerge:
-		return "Attempt to merge objects of a named group with other non-heap objects"
 	case ErrorScopedGroupMerge:
 		return "Attempt to merge objects of two non-nested scopes"
 	case ErrorIllegalRune:
@@ -355,8 +329,6 @@ func (e *Error) ToString(l *LocationMap) string {
 		return "Variable has no type"
 	case ErrorExpectedVariable:
 		return "Expected variable on left side of the assignment"
-	case ErrorWrongMutGroupOrder:
-		return "Wrong order or duplication of mutable and group definitions"
 	case AssignmentValueCountMismatch:
 		return "Number of values on the right-hand side of assignment does not match number of variables on the left-hand side"
 	case ErrorNoNewVarsInAssignment:
@@ -377,40 +349,6 @@ func (e *Error) ToString(l *LocationMap) string {
 		return "Dereferencing a null pointer"
 	case ErrorLiteralDuplicateField:
 		return "The field " + e.args[0] + " appears twice in the literal"
-	case ErrorGroupsCannotBeMerged:
-		var explain string
-		i := 0
-		if e.args[i] == "both_named" {
-			if e.args[i+1][0] == '-' && e.args[i+2][0] == '-' {
-				explain = ", because the two isolated groups must not be merged"
-			} else if e.args[i+1][0] == '-' {
-				explain = ", because the isolated group must not be merged with group `" + e.args[i+2] + "`"
-			} else if e.args[i+2][0] == '-' {
-				explain = ", because the isolated group must not be merged with group `" + e.args[i+1] + "`"
-			} else {
-				explain = ", because the two named groups `" + e.args[i+1] + "` and `" + e.args[i+2] + "` must not be merged"
-			}
-			i += 3
-		} else if e.args[i] == "both_scoped" {
-			explain = ", because both groups belong to a lexical scope and these scopes are not nested"
-			i++
-		} else if e.args[i] == "scoped_and_named" {
-			if e.args[i+1][0] == '-' {
-				explain = ", because one group belongs to a lexical scope and the other one is an isolated group"
-			} else {
-				explain = ", because one group belongs to a lexical scope and these other is the named group `" + e.args[i+1] + "`"
-			}
-			i += 2
-		} else if e.args[i] == "overconstrained" {
-			explain = ", because at least one of the groups cannot be statically analyzed (i.e. depends on the control flow) and the other group is not free"
-			i++
-		} else {
-			panic("Oooops")
-		}
-		if len(e.args) > i {
-			return "The expression tries to merge two memory groups (one of them variable `" + e.args[i] + "`) which cannot be merged" + explain
-		}
-		return "The expression tries to merge two memory groups that cannot be merged" + explain
 	case ErrorUnknownLinkage:
 		return "Unknown linkage " + e.args[0]
 	case ErrorNotAFunction:
@@ -421,10 +359,6 @@ func (e *Error) ToString(l *LocationMap) string {
 		return "The type conversion from " + e.args[0] + " to " + e.args[1] + " is not allowed"
 	case ErrorNewInitializerMismatch:
 		return "The initializer does not match the data type"
-	case ErrorCannotInferTypeWithGroups:
-		return "Cannot infer type with group specifiers"
-	case ErrorGroupUnavailable:
-		return "The memory group is unavailable at this place, most likely because it has been assigned to an isolated pointer before"
 	case ErrorUnknownMetaProperty:
 		return "Unknown type property `" + e.args[0] + "`"
 	case ErrorDualOutsideDualFunction:
@@ -433,23 +367,6 @@ func (e *Error) ToString(l *LocationMap) string {
 		return "The target for the member function is not mutable, but the function requires a mutable target"
 	case ErrorIllegalEllipsis:
 		return "The `...` operator is not allowed in this context"
-	case ErrorGroupingConstraints:
-		if l == nil {
-			return "The " + e.args[0] + " and the " + e.args[1] + " cannot be merged into one group"
-		}
-		str := "The " + e.args[0] + " and the " + e.args[1] + " cannot be merged into one group"
-		for _, loc := range e.locations {
-			_, line, pos := l.Decode(loc.From)
-			str += fmt.Sprintf("\n\tvia %v:%v", line, pos)
-		}
-		return str
-	case ErrorInconsistentGroupSpecifier:
-		str := "The group specifier named " + e.args[0] + " is different from the one used here:"
-		for _, loc := range e.locations[1:] {
-			_, line, pos := l.Decode(loc.From)
-			str += fmt.Sprintf(" %v:%v", line, pos)
-		}
-		return str
 	case ErrorAddressOfAnonymousValue:
 		// This can happen when a pointer is dereferened, and then the address is taken,
 		// e.g. `&*arrayPtr`
@@ -458,8 +375,6 @@ func (e *Error) ToString(l *LocationMap) string {
 		// This can happen when a pointer to an array is dereferened, and then a slice is taken,
 		// e.g. `(*arrayPtr)[1:2]`
 		return "Taking a slice of an anonymous array is not allowed"
-	case ErrorGroupingOutOfScope:
-		return "The variable uses a grouping that is out of scope. Most likely the grouping contains a pointer to some stack variable and this stack variable is out of scope"
 	case ErrorPointerInUnion:
 		return "Pointer types must not be used in unions"
 	case ErrorExcessiveUnionValue:

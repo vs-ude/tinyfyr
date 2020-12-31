@@ -134,7 +134,7 @@ func checkFuncs(t Type, pkg *Package, log *errlog.ErrorLog) error {
 		}
 		t2.funcsChecked = true
 		return checkFuncs(t2.FuncType, pkg, log)
-	case *GroupedType:
+	case *StackOrderedType:
 		if t2.pkg != pkg || t2.TypeBase.funcsChecked {
 			return nil
 		}

@@ -188,7 +188,7 @@ func checkVarExpression(n *parser.VarExpressionNode, s *Scope, log *errlog.Error
 					return log.AddError(errlog.AssignmentValueCountMismatch, n.Location())
 				}
 				for i, name := range n.Names {
-					fet := &ExprType{Type: st.Fields[i].Type, PointerDestGroupSpecifier: vet.PointerDestGroupSpecifier, PointerDestMutable: vet.PointerDestMutable}
+					fet := &ExprType{Type: st.Fields[i].Type, PointerDestStackOrder: vet.PointerDestStackOrder, PointerDestMutable: vet.PointerDestMutable}
 					name.SetTypeAnnotation(et)
 					if err = checkExprEqualType(et, fet, Assignable, n.Location(), log); err != nil {
 						return err
@@ -211,7 +211,7 @@ func checkVarExpression(n *parser.VarExpressionNode, s *Scope, log *errlog.Error
 					return log.AddError(errlog.AssignmentValueCountMismatch, n.Location())
 				}
 				for _, name := range n.Names {
-					fet := &ExprType{Type: a.ElementType, PointerDestGroupSpecifier: vet.PointerDestGroupSpecifier, PointerDestMutable: vet.PointerDestMutable}
+					fet := &ExprType{Type: a.ElementType, PointerDestStackOrder: vet.PointerDestStackOrder, PointerDestMutable: vet.PointerDestMutable}
 					name.SetTypeAnnotation(et)
 					if err = checkExprEqualType(et, fet, Assignable, n.Location(), log); err != nil {
 						return err
@@ -398,7 +398,7 @@ func checkGlobalVarExpression(n *parser.VarExpressionNode, s *Scope, cmp *Compon
 		return nil, err
 	}
 	et := makeExprType(etRight.Type)
-	et.PointerDestGroupSpecifier = etRight.PointerDestGroupSpecifier
+	et.PointerDestStackOrder = etRight.PointerDestStackOrder
 	et.PointerDestMutable = etRight.PointerDestMutable
 	if n.VarToken.Kind == lexer.TokenVar {
 		et.Mutable = true
@@ -1430,9 +1430,9 @@ func checkMemberCallExpression(n *parser.MemberCallExpressionNode, s *Scope, log
 		return log.AddError(errlog.ErrorParameterCountMismatch, n.Arguments.Location())
 	}
 	et = makeExprType(ft.ReturnType())
-	if et.PointerDestGroupSpecifier != nil && et.PointerDestGroupSpecifier.Kind == GroupSpecifierNamed {
-		et.PointerDestGroupSpecifier = nil
-	}
+	// if et.PointerDestGroupSpecifier != nil && et.PointerDestGroupSpecifier.Kind == GroupSpecifierNamed {
+	// 	et.PointerDestGroupSpecifier = nil
+	// }
 	n.SetTypeAnnotation(et)
 	return nil
 }
@@ -1647,7 +1647,7 @@ func checkCastExpression(n *parser.CastExpressionNode, s *Scope, log *errlog.Err
 		if pt, ok := GetPointerType(et.Type); ok && pt.Mode == PtrUnsafe && slResult.ElementType == pt.ElementType {
 			// #X -> []X
 			etResult.TypeConversionValue = ConvertPointerToSlice
-		} else if slResult.ElementType == PrimitiveTypeByte && !etResult.PointerDestMutable && etResult.PointerDestGroupSpecifier == nil && et.Type == PrimitiveTypeString {
+		} else if slResult.ElementType == PrimitiveTypeByte && !etResult.PointerDestMutable && et.Type == PrimitiveTypeString {
 			// String -> []byte
 			etResult.TypeConversionValue = ConvertStringToByteSlice
 		}

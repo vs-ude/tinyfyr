@@ -597,31 +597,6 @@ func (p *Parser) parseTypeIntern(allowScopedName bool) (Node, error) {
 		return p.parseClosureType(t)
 	case lexer.TokenFunc:
 		return p.parseFuncType(t)
-	case lexer.TokenNew,
-		lexer.TokenConst,
-		lexer.TokenArrow:
-		n := &GroupedTypeNode{GroupSpecToken: t}
-		if t, ok := p.optional(lexer.TokenBacktick); ok {
-			n.GroupNameTickToken = t
-			if n.GroupNameToken, err = p.expect(lexer.TokenIdentifier); err != nil {
-				return nil, err
-			}
-		}
-		n.Type, err = p.parseType()
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
-	case lexer.TokenBacktick:
-		n := &GroupedTypeNode{GroupNameTickToken: t}
-		if n.GroupNameToken, err = p.expect(lexer.TokenIdentifier); err != nil {
-			return nil, err
-		}
-		n.Type, err = p.parseType()
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
 	}
 	return nil, p.expectError(lexer.TokenMut, lexer.TokenDual, lexer.TokenAsterisk, lexer.TokenAmpersand, lexer.TokenTilde, lexer.TokenCaret, lexer.TokenHash, lexer.TokenOpenBracket, lexer.TokenIdentifier)
 }
